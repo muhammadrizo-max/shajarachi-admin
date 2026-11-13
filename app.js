@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-const VIEWS = ['view-login', 'view-otp', 'view-tg', 'view-dashboard'];
+const VIEWS = ['view-login', 'view-otp', 'view-dashboard'];
 const tg = window.Telegram?.WebApp;
 tg?.ready();
 tg?.expand();
@@ -72,7 +72,14 @@ async function loadDashboard() {
 
 async function init() {
   if (initData) {
-    show('view-tg');
+    try {
+      const r = await call('POST', '/api/auth/telegram', { init_data: initData });
+      challengeId = r.challenge_id;
+      show('view-otp');
+    } catch (err) {
+      show('view-login');
+      setErr('msg-login', err.message);
+    }
     return;
   }
   try {
@@ -87,12 +94,17 @@ $('form-login').addEventListener('submit', async (e) => {
   setErr('msg-login');
   try {
     const r = await call('POST', '/api/auth/login', {
-      email: $('email').value.trim(),
+      login: $('login').value.trim().toLowerCase(),
       password: $('password').value,
     });
     $('password').value = '';
-    challengeId = r.challenge_id;
-    show('view-otp');
+    if (r.step === 'otp') {
+      challengeId = r.challenge_id;
+      $('otp-hint').textContent = 'Emailingizga yuborilgan 8 xonali kodni kiriting.';
+      show('view-otp');
+    } else {
+      await loadDashboard();
+    }
   } catch (err) {
     setErr('msg-login', err.message);
   }
@@ -107,18 +119,6 @@ $('form-otp').addEventListener('submit', async (e) => {
     await loadDashboard();
   } catch (err) {
     setErr('msg-otp', err.message);
-  }
-});
-
-$('form-tg').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  setErr('msg-tg');
-  try {
-    await call('POST', '/api/auth/telegram', { init_data: initData, password: $('tg-password').value });
-    $('tg-password').value = '';
-    await loadDashboard();
-  } catch (err) {
-    setErr('msg-tg', err.message);
   }
 });
 
