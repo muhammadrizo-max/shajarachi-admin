@@ -1,40 +1,49 @@
-import { randomUUID } from 'node:crypto';
 import { field, HttpError, route } from '../../lib/http';
-import { sendOtpEmail } from '../../lib/mailer';
-import { isLocked, recordFailure } from '../../lib/login-guard';
-import { newOtp, sha256, verifyPassword } from '../../lib/security';
+import { isLocked, recordFailure, recordSuccess } from '../../lib/login-guard';
+import { issueChallenge } from '../../lib/otp';
+import { verifyPassword } from '../../lib/security';
+import { startSession } from '../../lib/session';
 import { supabase } from '../../lib/supabase';
 
-const BAD = 'Email yoki parol noto‘g‘ri';
+const BAD = 'Login yoki parol noto‘g‘ri';
+// 0 qilsangiz, har bir kirishda email kodi so'raladi
+const OTP_AFTER_FAILS = 2;
 
 export default route('POST', async (req, res) => {
-  const email = field(req.body, 'email', 254).trim().toLowerCase();
+  const login = field(req.body, 'login', 32).trim().toLowerCase();
   const password = field(req.body, 'password', 200);
 
   const { data: admin } = await supabase
     .from('admins')
     .select('id, email, password_hash, is_active, failed_attempts, locked_until')
-    .eq('email', email)
+    .eq('login', login)
     .maybeSingle();
 
-  const pwOk = await verifyPassword(password, admin?.password_hash);
-  if (!admin || !admin.is_active || !pwOk || isLocked(admin.locked_until)) {
-    if (admin) await recordFailure(admin.id, admin.failed_attempts);
+  if (!admin || !admin.is_active) {
+    await verifyPassword(password, null);
     throw new HttpError(401, BAD);
   }
+  if (isLocked(admin.locked_until)) {
+    throw new HttpError(429, 'Juda ko‘p urinish. 15 daqiqadan keyin qayta urining.');
+  }
 
-  await supabase.from('admin_login_challenges').update({ used: true }).eq('admin_id', admin.id).eq('used', false);
+  const ok = await verifyPassword(password, admin.password_hash);
 
-  const challengeId = randomUUID();
-  const code = newOtp();
-  const { error } = await supabase.from('admin_login_challenges').insert({
-    id: challengeId,
-    admin_id: admin.id,
-    code_hash: sha256(`${challengeId}:${code}`),
-    expires_at: new Date(Date.now() + 5 * 60_000).toISOString(),
-  });
-  if (error) throw error;
+  if (!ok) {
+    await recordFailure(admin.id, admin.failed_attempts);
+    if (admin.failed_attempts + 1 < OTP_AFTER_FAILS) throw new HttpError(401, BAD);
+    const challengeId = await issueChallenge(admin, 'password_otp');
+    res.status(200).json({ step: 'otp', challenge_id: challengeId });
+    return;
+  }
 
-  await sendOtpEmail(admin.email, code);
-  res.status(200).json({ challenge_id: challengeId });
+  if (admin.failed_attempts < OTP_AFTER_FAILS) {
+    await recordSuccess(admin.id);
+    await startSession(req, res, admin.id, 'password');
+    res.status(200).json({ step: 'done' });
+    return;
+  }
+
+  const challengeId = await issueChallenge(admin, 'password_otp');
+  res.status(200).json({ step: 'otp', challenge_id: challengeId });
 });
