@@ -46,7 +46,8 @@ export function route(
         return;
       }
       console.error('[admin]', e);
-      res.status(500).json({ error: 'server xatosi' });
+      const detail = e instanceof Error ? e.message : String(e);
+      res.status(500).json({ error: 'server xatosi', detail });
     }
   };
 }
