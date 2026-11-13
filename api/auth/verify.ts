@@ -1,18 +1,19 @@
 import { field, HttpError, route } from '../../lib/http';
 import { recordSuccess } from '../../lib/login-guard';
 import { safeEqual, sha256 } from '../../lib/security';
-import { startSession } from '../../lib/session';
+import { startSession, type SessionMethod } from '../../lib/session';
 import { supabase } from '../../lib/supabase';
 
 const MAX_ATTEMPTS = 5;
 
 export default route('POST', async (req, res) => {
   const challengeId = field(req.body, 'challenge_id', 64);
-  const code = field(req.body, 'code', 6);
+  const code = field(req.body, 'code', 8);
+  if (!/^\d{8}$/.test(code)) throw new HttpError(400, 'Kod 8 xonali bo‘lishi kerak');
 
   const { data: c } = await supabase
     .from('admin_login_challenges')
-    .select('id, admin_id, code_hash, attempts, used, expires_at')
+    .select('id, admin_id, code_hash, attempts, used, expires_at, method')
     .eq('id', challengeId)
     .maybeSingle();
 
@@ -27,6 +28,6 @@ export default route('POST', async (req, res) => {
 
   await supabase.from('admin_login_challenges').update({ used: true }).eq('id', challengeId);
   await recordSuccess(c.admin_id);
-  await startSession(req, res, c.admin_id, 'password_otp');
+  await startSession(req, res, c.admin_id, c.method as SessionMethod);
   res.status(200).json({ ok: true });
 });
