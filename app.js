@@ -23,7 +23,7 @@ async function call(method, path, body) {
     body: hasBody ? JSON.stringify(body) : undefined,
   });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || 'Xato yuz berdi');
+  if (!r.ok) throw new Error(data.error || `Xato: HTTP ${r.status}`);
   return data;
 }
 
