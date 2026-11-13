@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "create-admin": "tsx scripts/create-admin.ts"
+    "create-admin": "tsx scripts/create-admin.ts",
+    "set-password": "tsx scripts/set-password.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0"
