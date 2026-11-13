@@ -3,6 +3,7 @@ import { clientIp, getCookie, HttpError } from './http';
 import { randomToken, sha256 } from './security';
 import { supabase } from './supabase';
 
+export type SessionMethod = 'password' | 'password_otp' | 'telegram_otp';
 export const SESSION_COOKIE = '__Host-sid';
 const TTL_SEC = 12 * 3600;
 
@@ -12,7 +13,7 @@ export async function startSession(
   req: VercelRequest,
   res: VercelResponse,
   adminId: string,
-  method: 'password_otp' | 'telegram_password'
+  method: SessionMethod
 ): Promise<void> {
   const token = randomToken();
   const ip = clientIp(req);
