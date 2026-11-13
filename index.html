@@ -18,36 +18,25 @@
 
   <section id="view-login" class="card" hidden>
     <form id="form-login">
-      <label>Email
-        <input id="email" type="email" required autocomplete="username">
+      <label>Login (harf va raqam)
+        <input id="login" type="text" pattern="[A-Za-z0-9]{3,32}" required autocomplete="username" autocapitalize="off">
       </label>
       <label>Parol
         <input id="password" type="password" required autocomplete="current-password">
       </label>
-      <button type="submit">Davom etish</button>
+      <button type="submit">Kirish</button>
       <p id="msg-login" class="err" role="alert"></p>
     </form>
   </section>
 
   <section id="view-otp" class="card" hidden>
     <form id="form-otp">
-      <p>Emailingizga yuborilgan 6 xonali kodni kiriting.</p>
+      <p id="otp-hint" class="muted">Emailingizga yuborilgan 8 xonali kodni kiriting.</p>
       <label>Kod
-        <input id="code" inputmode="numeric" pattern="\d{6}" maxlength="6" required autocomplete="one-time-code">
+        <input id="code" inputmode="numeric" pattern="\d{8}" maxlength="8" required autocomplete="one-time-code">
       </label>
       <button type="submit">Tasdiqlash</button>
       <p id="msg-otp" class="err" role="alert"></p>
-    </form>
-  </section>
-
-  <section id="view-tg" class="card" hidden>
-    <form id="form-tg">
-      <p>Telegram orqali kirish. Parolingizni kiriting.</p>
-      <label>Parol
-        <input id="tg-password" type="password" required autocomplete="current-password">
-      </label>
-      <button type="submit">Kirish</button>
-      <p id="msg-tg" class="err" role="alert"></p>
     </form>
   </section>
 
