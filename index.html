@@ -5,87 +5,60 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Shajarachi Admin</title>
+<link rel="stylesheet" href="/styles.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
-:root{color-scheme:dark;--bg:#0b1220;--card:#131c2e;--text:#e2e8f0;--muted:#94a3b8;--accent:#059669}
-body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:16px}
-h1{font-size:20px;margin:0 0 16px}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-.card{background:var(--card);border-radius:12px;padding:14px}
-.num{font-size:26px;font-weight:bold;color:var(--accent)}
-.label{font-size:12px;color:var(--muted)}
-.msg{border-left:3px solid var(--accent);padding:10px 12px;margin-bottom:10px;background:var(--card);border-radius:8px}
-.meta{font-size:12px;color:var(--muted);margin-bottom:6px}
-.body{white-space:pre-wrap;font-size:14px}
-.err{color:#f87171}
-</style>
+<script src="/app.js" defer></script>
 </head>
 <body>
-<h1>Shajarachi Admin</h1>
-<div id="status"></div>
-<div class="stats" id="stats"></div>
-<div id="messages"></div>
-<script>
-const tg = window.Telegram?.WebApp;
-tg?.ready();
-tg?.expand();
-const initData = tg?.initData || '';
-const statusEl = document.getElementById('status');
+<main class="wrap">
+  <header class="top">
+    <h1>Shajarachi Admin</h1>
+    <span id="who" class="muted"></span>
+  </header>
 
-function el(tag, cls, text) {
-  const e = document.createElement(tag);
-  if (cls) e.className = cls;
-  if (text != null) e.textContent = text;
-  return e;
-}
+  <section id="view-login" class="card" hidden>
+    <form id="form-login">
+      <label>Email
+        <input id="email" type="email" required autocomplete="username">
+      </label>
+      <label>Parol
+        <input id="password" type="password" required autocomplete="current-password">
+      </label>
+      <button type="submit">Davom etish</button>
+      <p id="msg-login" class="err" role="alert"></p>
+    </form>
+  </section>
 
-async function api(path) {
-  const r = await fetch(path, { headers: { 'x-telegram-init-data': initData } });
-  const body = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(body.error || String(r.status)), { status: r.status });
-  return body;
-}
+  <section id="view-otp" class="card" hidden>
+    <form id="form-otp">
+      <p>Emailingizga yuborilgan 6 xonali kodni kiriting.</p>
+      <label>Kod
+        <input id="code" inputmode="numeric" pattern="\d{6}" maxlength="6" required autocomplete="one-time-code">
+      </label>
+      <button type="submit">Tasdiqlash</button>
+      <p id="msg-otp" class="err" role="alert"></p>
+    </form>
+  </section>
 
-function showError(msg) {
-  statusEl.replaceChildren(el('p', 'err', msg));
-}
+  <section id="view-tg" class="card" hidden>
+    <form id="form-tg">
+      <p>Telegram orqali kirish. Parolingizni kiriting.</p>
+      <label>Parol
+        <input id="tg-password" type="password" required autocomplete="current-password">
+      </label>
+      <button type="submit">Kirish</button>
+      <p id="msg-tg" class="err" role="alert"></p>
+    </form>
+  </section>
 
-function statCard(n, label) {
-  const c = el('div', 'card');
-  c.append(el('div', 'num', String(n ?? 0)), el('div', 'label', label));
-  return c;
-}
-
-function renderMessage(m) {
-  const box = el('div', 'msg');
-  const when = new Date(m.created_at).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
-  box.append(el('div', 'meta', `${when} · ${m.contact ?? ''}`));
-  if (m.topic) box.append(el('div', 'meta', m.topic));
-  box.append(el('div', 'body', m.message ?? ''));
-  return box;
-}
-
-async function load() {
-  if (!initData) return showError('Bu sahifa faqat Telegram admin botidan ochiladi.');
-  try {
-    const stats = await api('/api/admin/stats');
-    document.getElementById('stats').replaceChildren(
-      statCard(stats.total, 'Jami murojaat'),
-      statCard(stats.today, 'So‘nggi 24 soat')
-    );
-
-    const { messages } = await api('/api/admin/messages');
-    const box = document.getElementById('messages');
-    box.replaceChildren(...messages.map(renderMessage));
-    if (!messages.length) box.append(el('p', 'label', 'Murojaat yo‘q'));
-  } catch (e) {
-    if (e.status === 403) showError('Ruxsat yo‘q.');
-    else if (e.status === 401) showError('Sessiya tasdiqlanmadi.');
-    else showError('Xato: ' + e.message);
-  }
-}
-
-load();
-</script>
+  <section id="view-dashboard" hidden>
+    <div class="stats">
+      <div class="card"><div class="num" id="total">0</div><div class="muted">Jami murojaat</div></div>
+      <div class="card"><div class="num" id="today">0</div><div class="muted">So‘nggi 24 soat</div></div>
+    </div>
+    <div id="messages"></div>
+    <button id="logout" class="ghost" type="button">Chiqish</button>
+  </section>
+</main>
 </body>
 </html>
