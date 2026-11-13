@@ -20,7 +20,7 @@ export async function verifyPassword(pw: string, stored: string | null | undefin
 
 export const sha256 = (s: string): string => createHash('sha256').update(s).digest('hex');
 export const randomToken = (): string => randomBytes(32).toString('base64url');
-export const newOtp = (): string => String(randomInt(0, 1_000_000)).padStart(6, '0');
+export const newOtp = (): string => String(randomInt(0, 100_000_000)).padStart(8, '0');
 
 export function safeEqual(a: string, b: string): boolean {
   const x = Buffer.from(a);
