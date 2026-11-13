@@ -2,7 +2,8 @@
   "name": "shajarachi-admin",
   "private": true,
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "create-admin": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0"
@@ -10,6 +11,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@vercel/node": "^3.2.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   }
 }
